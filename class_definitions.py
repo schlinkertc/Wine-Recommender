@@ -5,88 +5,12 @@ import unicodedata
 import requests
 import bs4
 from bs4 import BeautifulSoup
+from os import walk
+import joblib
 
 kcw_wines = pd.read_csv('kings_county_wines.csv',index_col=0)
+wineSearcher = pd.read_csv('wine-searcher_data.csv')
 
-class KCW_product():
-    """
-    This class represents a record from the KCW csv. It includes methods for convenience and functionality.
-    """
-    name = None
-    link = None 
-    price = None
-    description = None 
-    date_collected = None 
-    image_link = None 
-    in_stock = None
-    details = None 
-    
-    def __init__(self,wine_name):
-        KCW_csvPath = "/Users/schlinkertc/code/wine_project/wine/kings_county_wines.csv"
-        KCW_df = pd.read_csv(KCW_csvPath,index_col=0)
-        
-        KCW_record = (
-            KCW_df.loc[KCW_df['name']==wine_name]
-        )
-        #make sure that we only have one wine under that name
-        if len(KCW_record)!=1:
-            print('more than 1 record found!')
-            return None
-        else:
-            KCW_record = KCW_record.iloc[0] #returns a series
-        
-        self.name = KCW_record['name']
-        self.link = KCW_record['link']
-        self.price = KCW_record['price']
-        self.description = KCW_record['description']
-        if KCW_record['description']=='null' and KCW_record['details']!='null':
-            self.description = KCW['details']
-        self.date_collected = dt.strptime(KCW_record['date_collected'],'%Y-%m-%d %H:%M:%S.%f')
-        self.image_link = KCW_record['image_link']
-        self.in_stock = KCW_record['in_stock']
-        self.details = KCW_record['details']
-    
-    def __repr__(self):
-        return f"KCW_product: {self.name}"
-    
-    # each word in the wine name without punctuation or numbers 
-    def search_terms(self):
-        terms = [x.replace('"','') for x in self.name.split(' ')]
-        # get rid of numbers
-        pattern = re.compile('[0-9]')
-        parsed_terms = []
-        for term in terms:
-            if re.search(pattern,term) == None:
-                parsed_terms.append(term)
-        
-        search_terms_bytes = [unicodedata.normalize('NFKD', x).encode('ascii','ignore') 
-                        for x in parsed_terms]
-        search_terms = [x.decode().strip('*') for x in search_terms_bytes]
-        
-        return search_terms
-    
-    # parse a year from the wine name 
-    def vintage(self):
-        terms = [x.replace('"','') for x in self.name.split(' ')]
-        pattern = re.compile('[0-9]{4}')
-        vintage = None
-        for term in terms:
-            if re.search(pattern,term):
-                vintage = term
-        return vintage
-    
-    def wine_searcherURL(self):
-        wine_searcher_findURL = 'https://www.wine-searcher.com/find/'
-        
-        # add a plus to each term
-        search_terms = [x+'+' for x in self.search_terms()]
-        
-        for term in search_terms:
-            # add the search terms to the URL 
-            wine_searcher_findURL+=term
-        # get rid of the last '+'
-        return wine_searcher_findURL.strip('+')
-    
 def scrapeKCW_product(product_url):
     wine_page = requests.get(product_url)
     wine_bs = BeautifulSoup(wine_page.content,features='lxml')
@@ -124,7 +48,10 @@ def scrapeKCW_product(product_url):
     
 class Wine():
     
-    storage_directory = "/Wines"
+    pickled_wines = []
+    for (dirpath,dirnames,filenames) in walk('Wines/'):
+        pickled_wines.extend(filenames)
+    pickled_wines = [x.strip('.pkl') for x in pickled_wines]
     
     headers = {
         'User-Agent': 
@@ -179,13 +106,21 @@ class Wine():
     
     def _scrape_wine_searcher(self):
         url = self._get_searchURL('https://www.wine-searcher.com/find/')
+        
         wine_dict = {'url':url}
-
+        
         page = requests.get(url,headers=self.headers)
+        if page.status_code != 200:
+            return f"{page.status_code}"
         bs = BeautifulSoup(page.content,'lxml')
+        
+        wine_dict['name'] = bs.find(
+            'h1',attrs={'class':'wine'}).\
+                getText(strip=True)
+        
         wine_info_panel = bs.find('div',attrs={"class":'wine-info-panel'})
         if wine_info_panel==None:
-            pass
+            return wine_dict
         wine_info = []
 
         for div in wine_info_panel.find_all('div',attrs={'class':'dtc'}):
@@ -216,9 +151,8 @@ class Wine():
             except:
                 wine_dict[key]='null'
         
-        wine_dict['name'] = bs.find(
-            'h1',attrs={'class':'wine'}).\
-                getText(strip=True)
+
+
         return wine_dict
     
     def _scrape_vivino(self):
@@ -230,17 +164,70 @@ class Wine():
         page = requests.get(url,headers=self.headers)
         bs = BeautifulSoup(page.content,'lxml')
     
-        return bs
+        #possible matches 
+        wine_cards = bs.find_all(attrs={'class':'wine-card__content'})
+        possible_matches = []
+        for card in wine_cards:
+            d = {}
+            d['wine_link'] = card.find('a')['href']
+            d['wine_name'] = card.find('a').getText().replace('\n','')
+
+            averages = card.find(
+                'div',attrs={'class':"text-color-alt-gray wine-card__averages"}
+            )
+            average_rating = averages.find(
+                attrs={'class':"text-inline-block light average__number"})\
+            .getText(strip=True)
+            
+            d['average_rating']=float(average_rating)
+
+            p_tags = averages.find_all('p')
+            text = [p.getText(strip=True) for p in p_tags]
+            for t in text:
+                if 'rating' in t:
+                    pattern = re.compile("[0-9]")
+                    temp = re.findall(r'\d+',t)
+                    ratings = list(map(int,temp))[0]
+                    d['ratings_count'] = ratings
+            possible_matches.append(d)
+        return possible_matches
     
-    def __init__(self,name=None,KCW_link=None):
+    def __init__(self,name=None,KCW_link=None,update=False):
         
         if name:
-            self.source = 'name-search'
-            self.name=name
-            self.search_terms = self._search_terms()
-            self.vintage = self._vintage()
-            self.wineSearcher = self._scrape_wine_searcher()
-        
+            name=name.replace('/','-')
+            if name in Wine.pickled_wines and update==False:
+                try:
+                    pkl = joblib.load(f"Wines/name-search/{name}.pkl")
+                    for k,v in pkl.__dict__.items():
+                        setattr(self,k,v)
+                except FileNotFoundError:
+                    Wine.pickled_wines.remove(name)
+            else:
+                self.source = 'name-search'
+                self.name=name
+                self.search_terms = self._search_terms()
+                self.vintage = self._vintage()
+                
+                # I don't like the repition, but I like the idea
+                # CSVs with backed up data to check before sraping
+                # need not to be de-duped, right?
+                if name in wineSearcher['name'].to_list():
+                    row = wineSearcher[wineSearcher['name']==name].iloc[0]
+                    d = row.to_dict()
+                    self.wineSearcher = d
+                else:
+                    self.wineSearcher = self._scrape_wine_searcher()
+                
+                if name in kcw_wines['name'].to_list():
+                    row = kcw_wines[kcw_wines['name']==name].iloc[0]
+                    d = row.to_dict()
+
+                self.vivino = self._scrape_vivino()
+
+                joblib.dump(self,f"Wines/name-search/{name}.pkl")
+                Wine.pickled_wines.append(name)
+
         if KCW_link:
             self.source = 'KCW'
             self.KCW = scrapeKCW_product(KCW_link)
