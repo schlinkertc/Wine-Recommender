@@ -6,6 +6,8 @@ import requests
 import bs4
 from bs4 import BeautifulSoup
 
+kcw_wines = pd.read_csv('kings_county_wines.csv',index_col=0)
+
 class KCW_product():
     """
     This class represents a record from the KCW csv. It includes methods for convenience and functionality.
@@ -124,7 +126,9 @@ class Wine():
     
     storage_directory = "/Wines"
     
-    headers = {'User-Agent': """Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36""",
+    headers = {
+        'User-Agent': 
+        """Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36""",
     'Connection': 'keep-alive',
     'Accept-Language': 'en-US,en;q=0.9',
     "Accept-Encoding": "gzip, deflate, br",
