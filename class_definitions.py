@@ -51,6 +51,7 @@ class Wine():
     pickled_wines = []
     for (dirpath,dirnames,filenames) in walk('Wines/'):
         pickled_wines.extend(filenames)
+    
     pickled_wines = [x.strip('.pkl') for x in pickled_wines]
     
     headers = {
