@@ -112,7 +112,7 @@ class Wine():
         
         page = requests.get(url,headers=self.headers)
         if page.status_code != 200:
-            return f"{page.status_code}"
+            return page.status_code
         bs = BeautifulSoup(page.content,'lxml')
         
         wine_dict['name'] = bs.find(
