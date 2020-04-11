@@ -239,3 +239,11 @@ class Wine():
             
     def __repr__(self):
         return f"Wine: {self.name}, Source: {self.source}"
+
+Wines = []
+for (dirpath,dirnames,filenames) in walk('Wines/'):
+    if 'name-search' in dirpath:
+        for filename in filenames:
+            pkl = joblib.load(dirpath+'/'+filename)
+            if pkl.__class__ == Wine:
+                Wines.append(pkl)

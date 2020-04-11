@@ -94,10 +94,11 @@ def selenium_scrape(wine_id):
                 
     return {wine_id:note_tags}
 
-for wine_id in vivino_ids:
-    try:
-        result = selenium_scrape(wine_id)
-        joblib.dump(result,storage_directory+str(wine_id))
-        print('*')
-    except:
-        continue
+if __name__ == "__main__":
+    for wine_id in vivino_ids:
+        try:
+            result = selenium_scrape(wine_id)
+            joblib.dump(result,storage_directory+str(wine_id))
+            print('*')
+        except:
+            continue

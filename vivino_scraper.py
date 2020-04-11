@@ -24,27 +24,25 @@ def scrape_vivino(wine_id):
     page = requests.get(url,headers=Wine.headers)
     bs = BeautifulSoup(page.content,features='lxml',parser='lxml')
     
-    ld_json = bs.find('script',attrs={'type':"application/ld+json"})
-    overview = json.loads(ld_json.text)['mainEntity']
-    
     scripts = bs.find_all('script')
     
     for s in scripts:
         if "winePageInformation" in s.text:
             info = s
-    a = info.text.split(';')[1]
+    a = "".join([x for x in info.text.split(';')[1:-1]])
     b = a.strip('\n  window.__PRELOADED_STATE__.winePageInformation = ')
     
     wine_info = json.loads(b)
     
     return wine_info
 
-import time 
-for wine_id in vivino_ids:
-    try:
-        result = scrape_vivino(wine_id)
-        joblib.dump(result,storage_directory+str(wine_id))
-        print('*')
-        time.sleep(10)
-    except:
-        continue
+if __name__ == "__main__":
+    import time 
+    for wine_id in vivino_ids:
+        try:
+            result = scrape_vivino(wine_id)
+            joblib.dump(result,storage_directory+str(wine_id))
+            print('*')
+            time.sleep(10)
+        except:
+            continue

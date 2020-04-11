@@ -1,72 +1,4 @@
-import pandas as pd
 import os
-from os import walk
-import joblib
-
-vivino_results = []
-for dirpath,directory,filenames in walk("../Wines/vivino/"):
-    for filename in filenames:
-        result = joblib.load(dirpath+filename)
-        vivino_results.append(result)
-
-def parse_dict(input_dict):
-    new_dict = {}
-    for k,v in input_dict.items():
-        if type(v) != dict and type(v) != list and v != None:
-            new_dict[k]=input_dict[k]
-        if type(v)==dict: 
-            if 'id' in v.keys():
-                new_dict[f"{k}_id"] = input_dict[k]['id']
-            else:
-                for key,value in v.items():
-                    new_dict[f"{k}_{key}"]=value
-    return new_dict
-
-records = []
-for result in vivino_results:
-    vintage_wine = result['vintage']['wine']
-    records.append(parse_dict(vintage_wine))
-
-wine_df = pd.DataFrame.from_records(records)
-
-wine_df.drop(columns=[x for x in wine_df.columns if 'light_winery' in x],inplace=True)
-
-wine_df.drop(columns=['vintage_mask_raw'],inplace=True)
-
-
-
-records = []
-for result in vivino_results:
-    style = result['vintage']['wine']['style']
-    if style !=None:
-        record = {k:v for k,v in parse_dict(style).items() if type(v)!=dict and type(v)!= list}
-        records.append(record)
-
-style_df = pd.DataFrame.from_records(records)
-
-
-records = []
-for result in vivino_results:
-    region = result['vintage']['wine']['region']
-    if region !=None:
-        record = {k:v for k,v in parse_dict(region).items() if type(v)!=dict and type(v)!= list}
-        records.append(record)
-
-region_df = pd.DataFrame.from_records(records)
-
-
-records = []
-for result in vivino_results:
-    try:
-        winery = result['vintage']['wine']['winery']
-    except KeyError:
-        winery=None
-    if winery !=None:
-        record = {k:v for k,v in parse_dict(winery).items() if type(v)!=dict and type(v)!= list}
-        records.append(record)
-
-winery_df = pd.DataFrame.from_records(records)
-
 import sqlalchemy
 from sqlalchemy import create_engine
 
@@ -93,39 +25,6 @@ class MyDatabase:
             print(self.db_engine)
         else:
             print("DBType is not found in DB_ENGINE")
-
-db = MyDatabase(dbtype='sqlite',dbname='vivino_wines.db')
-
-wine_df.to_sql('wines',db.db_engine)
-
-style_df.to_sql('styles',db.db_engine)
-
-region_df.to_sql('regions',db.db_engine)
-
-winery_df.to_sql('wineries',db.db_engine)
-
-def flatten_dicts(dictionary):
-    """
-    recursively flatten a dictionary of dictionaries
-    """
-    #base case 
-    if dict not in [type(x) for x in dictionary.values()]:
-        return dictionary
-    else:
-        for key, value in dictionary.items():
-            if type(value)==dict:
-                temp_dict = dictionary.pop(key)
-                for k,v in temp_dict.items():
-                    dictionary[f"{key}_{k}"]=v
-                return flatten_dicts(dictionary)
-            
-records = []
-for result in vivino_results:
     
-    record = flatten_dicts(parse_dict(result['vintage']))
-    records.append(record)
-vintages_df = pd.DataFrame.from_records(records)
-
-vintages_df = vintages_df[[x for x in vintages_df.columns if 'grape_composition' not in x and 'image' not in x]]
-
-vintages_df.to_sql('vintages',db.db_engine)
+if __name__ != '__main__':
+    db = MyDatabase(dbtype='sqlite',dbname='vivino_db/vivino_wines.db')
