@@ -6,31 +6,27 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from selenium.webdriver.chrome.options import Options
 
-Wines = []
-for (dirpath,dirnames,filenames) in walk('Wines/'):
-    if 'name-search' in dirpath:
-        for filename in filenames:
-            pkl = joblib.load(dirpath+'/'+filename)
-            if pkl.__class__ == Wine:
-                Wines.append(pkl)
+chrome_options = Options()
+chrome_options.add_argument("--headless")
 
-vivino_wines = []
-for w in Wines:
-    vivino_wines.extend(w.vivino)
-
-vivino_ids = [vw['wine_link'].split('/')[-1] for vw in vivino_wines]
-storage_directory = "Wines/vivino_tastingNotes/"
+    
+chrome_driver_path = "/Users/schlinkertc/code/chromedriver"
+driver = webdriver.Chrome(executable_path=chrome_driver_path)
 
 import time
-def selenium_scrape(wine_id):
+def selenium_scrape(wine_id,driver):
     url = f"https://vivino.com/wines/{str(wine_id)}"
     
     chrome_driver_path = "/Users/schlinkertc/code/chromedriver"
     driver = webdriver.Chrome(executable_path=chrome_driver_path)
     
     driver.get(url)
-    time.sleep(5)
+    time.sleep(2)
+    driver.execute_script("window.scrollTo(0, 1200)")
+    driver.execute_script("window.scrollTo(0, 1800)")
+    time.sleep(2)
     master_wine_page = driver.find_element_by_id('master-wine-page-app')
     
     driver.set_window_size(width=742,height=983)
@@ -43,6 +39,7 @@ def selenium_scrape(wine_id):
             break
 
     a.click()
+    time.sleep(5)
     text = master_wine_page.text
     notes = [x for x in text.split('\n') if 'mentions of' in x]
     
@@ -57,14 +54,23 @@ def selenium_scrape(wine_id):
         except:
             continue 
 
-    note_texts = []
+    #notes = []
     note_tags = []
     for i in range(len(tasteNotes)):
+        driver.execute_script("arguments[0].scrollIntoView();", tasteNotes[i])
         tasteNotes[i].click()
         time.sleep(5)
+        spans = driver.find_elements_by_tag_name('span')
+        for span in spans:
+            try:
+                span_class = span.get_attribute('class')
+                if 'tasteReviews__capitalizedTastes' in span_class:
+                    note_texts.append(span.text)
+            except:
+                continue
         divs = driver.find_elements_by_tag_name('div')
-        note_text = divs[1].text
-
+        
+        
         for div in divs:
             try:
                 div_class = div.get_attribute('class')
@@ -84,9 +90,7 @@ def selenium_scrape(wine_id):
 #                 styles.append(style)
 #         except:
 #             continue
-    driver.quit()
     indexed_notes = [{'index':n,'note':note} for n,note in enumerate(notes)]
-    
     for tag in note_tags:
         for note in indexed_notes:
             if note['index']==tag['index']:
@@ -95,6 +99,8 @@ def selenium_scrape(wine_id):
     return {wine_id:note_tags}
 
 if __name__ == "__main__":
+    df = pd.read_csv('dataset.csv')
+    vivino_ids = df['id'].to_list()
     for wine_id in vivino_ids:
         try:
             result = selenium_scrape(wine_id)
