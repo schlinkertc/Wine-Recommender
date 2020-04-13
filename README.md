@@ -25,7 +25,7 @@ Our original problem still prevails, though. After collecting all of this inform
 
 ### Exploring the Data
 
-I used plotly to explore and vizualize our results. Our data contains 128 wines offered on the Kings County Wines website from 13 countries and 105 unique regions. ![countries_regions]('images/countries_regions.html')
+I used plotly to explore and vizualize our results. Our data contains 128 wines offered on the Kings County Wines website from 13 countries and 105 unique regions. [countries_regions]('images/countries_regions.html')
 
 ### Modeling
 
