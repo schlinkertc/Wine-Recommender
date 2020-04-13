@@ -29,9 +29,19 @@ I used plotly to explore and vizualize our results. Our data contains 128 wines 
 
 ### Modeling
 
-First, we compute the weighted score for each wine. 
+First, we compute the weighted score for each wine. The average Vivino user rating is weighted by the number of ratings and the minimum number of ratings allowed to be included in the model.  
 
 To include tasting notes into our model, we'll compute TF-IDF vectors for the tags and notes for each wine. The TF-IDF score is the frequency of a word occuring in a document, down-weighted by the number of documents in which it occurs. 
 
+Region, country, grape, and wine style are ategorical values, so we'll use sklearn's One Hot Encoder to prepare these data for the model. Similarly, body and acidity are discrete variables from 1 to 5, so we'll use an Ordinal Encoder for those variables.
+
+For now, this is a straight-forward content based recommender that provides the 10 most similar wines in the dataset when given a particular wine. 
+
 [content-based recommender system](modeling.py)
+
+## Conclusion
+
+I'm happy with the recommendations that the code provides. The 10 recommendations are a nice variation of wine styles and countries, and they seem to make sense given my limited understanding of the different types of wine. 
+
+Going forward, I hope to build on this to develop a collaborative filtering recommendation engine that can offer more personalized suggestions. The first priority in making this more functional will be a better process for matching wine names to database entries. 
 
