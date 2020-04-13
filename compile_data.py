@@ -106,7 +106,48 @@ df,v_df = compile_data(Wines)
 
 v_df =  pd.DataFrame.from_records(v_df)
 
-data = pd.merge(left=df,right=v_df,on='instance')
+df = pd.merge(left=df,right=v_df,on='instance')
+
+## Messy/smelly updates that I need to clean up
+region_country = pd.read_sql('select name as region,country_name from regions',db.db_engine)
+df = pd.merge(df,region_country,on='region')
+
+stmt="""
+SELECT
+    v.id,
+    w.type_id
+FROM
+    vintages v
+INNER JOIN
+    wines w on v.wine_id = w.id
+"""
+types = pd.read_sql(stmt,db.db_engine)
+
+df = pd.merge(df,types,on='id')
+
+type_map = {
+    1:'Red',
+    2:'White',
+    3:'Sparkling',
+    4:'Rose'
+}
+df['type']=df['type_id'].map(type_map)
+
+# messy manual updates for now
+# need a better way to match vivino results with wineSearcher results
+df.loc[31,'type_id']=3
+df.loc[158,['Producer','Region/Appellation','Grape/Blend','Wine Style','Food Suggestion']] = ['Chateu Gassier', 'Cotes de Provence', 'Rare Rose Blend', 'Rose - Crisp and Dry', 'Tomato-based Dishes']
+df.loc[53,['Producer','Region/Appellation','Grape/Blend','Wine Style','Food Suggestion']] = ['Weingut Karl Proidl',"Kremstal",'Riesling',"White - Green and Flinty", 'White Fish' ]
+df.loc[4,['Producer','Region/Appellation','Grape/Blend','Wine Style','Food Suggestion']] = ['Weingut Koehler-Ruprecht','Pfalz','Pinot Noir','Red - Light and Perfumed','Meaty and Oily Fish']
+
+# wines that are matched between vivino and wineSearcher
+i = []
+for t in type_map.values():
+    i.extend(df[(df['Wine Style'].isna()==False)&(df['Wine Style'].str.contains(t))&(df['type']!=t)].index)
+
+df = df.drop(index=i).reset_index()
+df = df[df['Wine Style'].isna()==False]
+df['Wine Style']=df.apply(lambda x: x['Wine Style'].split('-')[-1].strip(),axis=1)
 
 if __name__ == "__main__":
-    data.to_csv('dataset.csv',index=False)
+    df.to_csv('dataset.csv',index=False)

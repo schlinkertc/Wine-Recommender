@@ -14,3 +14,11 @@ But I'm a data scientist! I have the power of statistical decision making on my 
 ### Data Gathering
 
 To get the data to inform our recomender engine, we'll have to scrape from multiple sources. It's unlikely that we'll get much quantitative information on these wines, so a well-trained word-embedding model is critical. We'll start by scraping wine names from my local shop. [Wine-searcher](wine-searcher.com) will give us more information on these wines such as the producer, wine region, grape/blend, etc. [Wine Folly](winefolly.com) has some great general information on grape varieties as well as a useful glossary of terms. Finally, [Vivino](vivino.com) can give us more info on specific wines and access to user reviews. 
+
+### Modeling
+
+First, we compute the weighted score for each wine. 
+
+To include tasting notes into our model, we'll compute TF-IDF vectors for the tags and notes for each wine. The TF-IDF score is the frequency of a word occuring in a document, down-weighted by the number of documents in which it occurs. 
+
+![I'm a relative reference to a repository file](images/modeling.html)
