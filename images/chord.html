@@ -36,22 +36,27 @@
         font-family: "Lato", sans-serif;
       }
 
-      #chart-e67225e2 {
+      #chart-a480f796 {
+
         font-size: 16px;
         font-family: "Bangers", sans-serif;
         text-align: center;
         fill: #454545;
       }
 
+      #chart-a480f796 svg {
+        max-width: 700px;
+      }
+
       @media (min-width: 600px) {
-				#chart-e67225e2{
+				#chart-a480f796{
 					font-size: 20px;
 				}
 			}
     </style>
   </head>
   <body>
-    <div id="chart-e67225e2" class="chord"></div>
+    <div id="chart-a480f796" class="chord"></div>
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
     <script>
@@ -78,13 +83,13 @@
         innerRadius = Math.min(width, height) * 0.39;
         outerRadius = innerRadius * 1.1;
 
-      tag_id = "chart-e67225e2";
+      tag_id = "chart-a480f796";
       padding = 0.01;
       Names = ['ageing', 'black fruit', 'citrus', 'dried fruit', 'earthy', 'microbio', 'oaky', 'red fruit', 'spices', 'tree fruit', 'tropical', 'vegetal'];
       colors = ['#A6B91A', '#705746', '#6F35FC', '#F7D02C', '#D685AD', '#C22E28', '#EE8130', '#A98FF3', '#735797', '#7AC74C', '#E2BF65', '#96D9D6', '#A8A77A', '#A33EA1', '#F95587', '#B6A136', '#B7B7CE', '#6390F0'];
       opacityDefault = 0.8;
       matrix = [[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 2, 6, 1, 6, 10, 1, 1, 0, 0], [1, 0, 0, 0, 4, 0, 2, 1, 0, 32, 4, 2], [0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 6, 4, 0, 0, 1, 11, 13, 2, 14, 0, 0], [0, 1, 0, 0, 1, 0, 4, 0, 0, 0, 0, 0], [1, 6, 2, 0, 11, 4, 0, 6, 1, 5, 0, 0], [0, 10, 1, 0, 13, 0, 6, 0, 4, 1, 0, 0], [0, 1, 0, 1, 2, 0, 1, 4, 0, 1, 0, 0], [0, 1, 32, 0, 14, 0, 5, 1, 1, 0, 3, 0], [0, 0, 4, 0, 0, 0, 0, 0, 0, 3, 0, 0], [0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
-      wrap_labels = false;
+      wrap_labels = true;
       
       ////////////////////////////////////////////////////////////
       /////////// Create scale and layout functions //////////////
@@ -115,13 +120,10 @@
       var svg = d3
         .select("#" + tag_id)
         .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
         .attr(
           "viewBox",
           "0 0 " +
             (width + margin.left + margin.right) +
-
           " " +
           (height + margin.top + margin.bottom)
         )
