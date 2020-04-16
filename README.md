@@ -27,6 +27,10 @@ Our original problem still prevails, though. After collecting all of this inform
 
 I used plotly to explore and vizualize our results. Our data contains 128 wines offered on the Kings County Wines website from 13 countries and 105 unique regions. ![Countries and Regions](images/countries_regions.png)
 
+The highest rated wines came from Italy and the United States followed closely by France. ![ratings_average](images/ratings_average.png).
+
+Vivino compiles tastings notes for each based on key words in user reviews. I used the tasting notes and the kewords that inspired to create this flavor wheel. ![flavor wheel](images/flavorwheel.png)
+
 ### Modeling
 
 First, we compute the weighted score for each wine. The average Vivino user rating is weighted by the number of ratings and the minimum number of ratings allowed to be included in the model.  
